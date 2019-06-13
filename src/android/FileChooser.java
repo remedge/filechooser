@@ -23,6 +23,7 @@ import org.apache.cordova.CordovaResourceApi;
 import org.apache.cordova.PluginResult;
 
 import com.ipaulpro.afilechooser.utils.FileUtils;
+import android.webkit.URLUtil;
 
 /**
  * FileChooser is a PhoneGap plugin that acts as polyfill for Android KitKat and web
@@ -37,11 +38,17 @@ public class FileChooser extends CordovaPlugin {
 
     private void showFileChooser(String mime) {
         // Use the GET_CONTENT intent from the utility class
-        Intent target = FileUtils.createGetContentIntent(mime);
+        // Intent target = FileUtils.createGetContentIntent(mime);
+
+        Intent target = new Intent()
+            .setType("*/*")
+            .setAction(Intent.ACTION_GET_CONTENT);
+
         // Create the chooser Intent
 
         Context context = this.cordova.getActivity().getApplicationContext();
         String packageName = context.getPackageName();
+        
         int chooserTitleStringId = context.getResources().getIdentifier("chooser_title", "string", packageName);
         Intent intent = Intent.createChooser(target, context.getResources().getString(chooserTitleStringId));
 
@@ -59,20 +66,14 @@ public class FileChooser extends CordovaPlugin {
                     if (data != null) {
                         // Get the URI of the selected file
                         final Uri uri = data.getData();
-                        Log.i(TAG, "URI: " + uri.toString());
+
                         JSONObject obj = new JSONObject();
+
                         try {
-                            File f = FileUtils.getFile(this.cordova.getActivity(), uri);
-                            if (f == null) {
-                                this.callbackContext.error("Selected file must be on local drive");
-                            } else {
-                                final String url = f.toURI().toURL().toString();
-                                Log.i(TAG, "URL: " + url);
-                                obj.put("url", url);
-                                this.callbackContext.success(obj);
-                            }
+                            obj.put("url", uri.toString());
+                            this.callbackContext.success(obj);                            
                         } catch (Exception e) {
-                            Log.e(TAG, "File select error", e);
+                            // Log.e(TAG, "File select error", e);
                             this.callbackContext.error(e.getMessage());
                         }
                     }
@@ -81,6 +82,7 @@ public class FileChooser extends CordovaPlugin {
                 }
         }
     }
+
 
     @Override
     public boolean execute(String action, JSONArray args, CallbackContext callbackContext) {
